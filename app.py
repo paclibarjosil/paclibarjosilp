@@ -1,32 +1,21 @@
-from flask import Flask, jsonify, request
-
-app = Flask(__name__)
-
-
-@app.route('/')
+@app.route("/")
 def home():
-    return "Welcome to my first API!"
-
-
-@app.route('/student')
-def get_student():
-    return jsonify({
-        "student_id": "24-00228",
-        "name": "Josil Paclibar",
-        "program": "BSIT",
-        "year": 3,
-        "section": "B - Dijkstra"
-    })
-
-
-@app.route('/hello')
-def say_hello():
-    name = request.args.get('name', 'Student')
-
-    return jsonify({
-        "message": f"Hello, {name}!"
-    })
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    return """
+    <html>
+    <head>
+        <title>My First Flask API</title>
+    </head>
+    <body>
+        <h1>Welcome to My First API!</h1>
+        <h2>Student Information</h2>
+        <p>Name: Josil Paclibar</p>
+        <p>Course: BSIT</p>
+        <p>Section: BSIT 3B</p>
+        <p>Subject: IT 3120</p>
+        <hr>
+        <p>Flask API is running successfully!</p>
+        <a href="/student">View Student API</a><br>
+        <a href="/hello?name=Josil%20Paclibar">Test Hello API</a>
+    </body>
+    </html>
+    """
