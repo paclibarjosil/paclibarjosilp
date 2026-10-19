@@ -49,10 +49,23 @@
             max-width: 90%;
         }
 
-        #result, #greeting, #courseResult {
+        #result, #greeting, #courseResult, #studentList {
             margin-top: 15px;
             padding: 10px;
             overflow-wrap: anywhere;
+        }
+
+        .student-record {
+            padding: 12px;
+            margin: 10px 0;
+            background: #f4f6f9;
+            border-left: 4px solid #1769aa;
+            border-radius: 5px;
+        }
+
+        .status {
+            color: #555;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -61,14 +74,14 @@
     <h1>Student API Interface</h1>
     <p>Welcome! Use the buttons below to retrieve information from your Flask API.</p>
 
-    <!-- Student Information -->
+    <!-- Existing Student Information API -->
     <div class="card">
         <h2>Student Information</h2>
         <button onclick="loadStudent()">Load Student Information</button>
         <div id="result"></div>
     </div>
 
-    <!-- Greeting API -->
+    <!-- Existing Greeting API -->
     <div class="card">
         <h2>Greeting API</h2>
         <input
@@ -81,7 +94,7 @@
         <p id="greeting"></p>
     </div>
 
-    <!-- Custom Course API -->
+    <!-- Existing Course Information API -->
     <div class="card">
         <h2>Course Information API</h2>
         <p>Retrieve course details from your custom Flask API endpoint.</p>
@@ -89,8 +102,43 @@
         <div id="courseResult"></div>
     </div>
 
+    <!-- Activity 7: SQLite Database -->
+    <div class="card">
+        <h2>Students from Database</h2>
+        <p>
+            Retrieve student records stored in the SQLite database.
+        </p>
+
+        <button onclick="loadStudents()">Load Students</button>
+
+        <div id="studentList" aria-live="polite">
+            <p class="status">
+                Click "Load Students" to display database records.
+            </p>
+        </div>
+    </div>
+
+    <!-- Additional Task: Search by Section -->
+    <div class="card">
+        <h2>Search Students by Section</h2>
+        <p>Enter a section to retrieve matching student records.</p>
+
+        <input
+            type="text"
+            id="sectionInput"
+            placeholder="Enter section (e.g. B)"
+        >
+        <br>
+
+        <button onclick="loadStudentsBySection()">
+            Search Section
+        </button>
+
+        <div id="sectionResults" aria-live="polite"></div>
+    </div>
+
     <script>
-        // Student Information API
+        // Existing Student Information API
         function loadStudent() {
             fetch('/student')
                 .then(response => {
@@ -100,24 +148,37 @@
                     return response.json();
                 })
                 .then(data => {
-                    document.getElementById('result').innerHTML =
-                        '<p><b>Student ID:</b> ' + data.student_id + '</p>' +
-                        '<p><b>Name:</b> ' + data.name + '</p>' +
-                        '<p><b>Program:</b> ' + data.program + '</p>' +
-                        '<p><b>Year:</b> ' + data.year + '</p>' +
-                        '<p><b>Section:</b> ' + data.section + '</p>';
+                    const result = document.getElementById('result');
+                    result.replaceChildren();
+
+                    const fields = [
+                        ['Student ID', data.student_id],
+                        ['Name', data.name],
+                        ['Program', data.program],
+                        ['Year', data.year],
+                        ['Section', data.section]
+                    ];
+
+                    fields.forEach(([label, value]) => {
+                        const p = document.createElement('p');
+                        const b = document.createElement('b');
+                        b.textContent = label + ': ';
+                        p.append(b, document.createTextNode(value));
+                        result.appendChild(p);
+                    });
                 })
-                .catch(error => {
-                    document.getElementById('result').innerText =
+                .catch(() => {
+                    document.getElementById('result').textContent =
                         'Unable to retrieve student data.';
                 });
         }
 
-        // Greeting API
+        // Existing Greeting API
         function sayHello() {
             const name = document.getElementById('nameInput').value.trim();
+            const queryName = name || 'Student';
 
-            fetch('/hello?name=' + encodeURIComponent(name))
+            fetch('/hello?name=' + encodeURIComponent(queryName))
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Request failed');
@@ -125,15 +186,16 @@
                     return response.json();
                 })
                 .then(data => {
-                    document.getElementById('greeting').innerText = data.message;
+                    document.getElementById('greeting').textContent =
+                        data.message;
                 })
-                .catch(error => {
-                    document.getElementById('greeting').innerText =
+                .catch(() => {
+                    document.getElementById('greeting').textContent =
                         'Unable to retrieve greeting.';
                 });
         }
 
-        // Custom Course Information API
+        // Existing Course Information API
         function loadCourse() {
             fetch('/course')
                 .then(response => {
@@ -143,16 +205,121 @@
                     return response.json();
                 })
                 .then(data => {
-                    document.getElementById('courseResult').innerHTML =
-                        '<p><b>Course Code:</b> ' + data.course_code + '</p>' +
-                        '<p><b>Course Title:</b> ' + data.course_title + '</p>' +
-                        '<p><b>Instructor:</b> ' + data.instructor + '</p>' +
-                        '<p><b>Semester:</b> ' + data.semester + '</p>' +
-                        '<p><b>Academic Year:</b> ' + data.academic_year + '</p>';
+                    const result = document.getElementById('courseResult');
+                    result.replaceChildren();
+
+                    const fields = [
+                        ['Course Code', data.course_code],
+                        ['Course Title', data.course_title],
+                        ['Instructor', data.instructor],
+                        ['Semester', data.semester],
+                        ['Academic Year', data.academic_year]
+                    ];
+
+                    fields.forEach(([label, value]) => {
+                        const p = document.createElement('p');
+                        const b = document.createElement('b');
+                        b.textContent = label + ': ';
+                        p.append(b, document.createTextNode(value));
+                        result.appendChild(p);
+                    });
+                })
+                .catch(() => {
+                    document.getElementById('courseResult').textContent =
+                        'Unable to retrieve course information.';
+                });
+        }
+
+        // Activity 7: Load All Students from SQLite
+        function loadStudents() {
+            const list = document.getElementById('studentList');
+            list.textContent = 'Loading students...';
+
+            fetch('/students')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to load students');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    list.replaceChildren();
+
+                    if (data.length === 0) {
+                        list.textContent = 'No student records found.';
+                        return;
+                    }
+
+                    data.forEach(student => {
+                        const record = document.createElement('div');
+                        record.className = 'student-record';
+
+                        const title = document.createElement('strong');
+                        title.textContent =
+                            student.student_id + ' - ' + student.name;
+
+                        const details = document.createElement('p');
+                        details.textContent =
+                            student.program +
+                            ' | Year ' + student.year +
+                            ' | Section ' + student.section;
+
+                        record.append(title, details);
+                        list.appendChild(record);
+                    });
                 })
                 .catch(error => {
-                    document.getElementById('courseResult').innerText =
-                        'Unable to retrieve course information.';
+                    list.textContent =
+                        'Unable to retrieve student records. Check your Flask server.';
+                    console.error(error);
+                });
+        }
+
+        // Activity 7 Additional Task: Search by Section
+        function loadStudentsBySection() {
+            const section = document.getElementById('sectionInput')
+                .value.trim();
+
+            const results = document.getElementById('sectionResults');
+
+            if (!section) {
+                results.textContent = 'Please enter a section.';
+                return;
+            }
+
+            results.textContent = 'Searching...';
+
+            fetch('/students/section/' + encodeURIComponent(section))
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Search failed');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    results.replaceChildren();
+
+                    if (data.length === 0) {
+                        results.textContent =
+                            'No students found in section ' + section + '.';
+                        return;
+                    }
+
+                    data.forEach(student => {
+                        const p = document.createElement('p');
+                        p.textContent =
+                            student.student_id + ' - ' +
+                            student.name + ' | ' +
+                            student.program + ' | Year ' +
+                            student.year + ' | Section ' +
+                            student.section;
+
+                        results.appendChild(p);
+                    });
+                })
+                .catch(() => {
+                    results.textContent =
+                        'Unable to search students. Check your Flask server.';
                 });
         }
     </script>
