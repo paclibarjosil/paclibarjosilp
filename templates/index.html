@@ -26,6 +26,7 @@
             margin-bottom: 20px;
             border-radius: 10px;
             border: 1px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
 
         button {
@@ -38,13 +39,17 @@
             border-radius: 5px;
         }
 
+        button:hover {
+            background: #104d80;
+        }
+
         input {
             padding: 10px;
             margin: 5px 0;
             max-width: 90%;
         }
 
-        #result, #greeting {
+        #result, #greeting, #courseResult {
             margin-top: 15px;
             padding: 10px;
             overflow-wrap: anywhere;
@@ -56,21 +61,36 @@
     <h1>Student API Interface</h1>
     <p>Welcome! Use the buttons below to retrieve information from your Flask API.</p>
 
+    <!-- Student Information -->
     <div class="card">
         <h2>Student Information</h2>
         <button onclick="loadStudent()">Load Student Information</button>
         <div id="result"></div>
     </div>
 
+    <!-- Greeting API -->
     <div class="card">
         <h2>Greeting API</h2>
-        <input type="text" id="nameInput" placeholder="Enter your first name">
+        <input
+            type="text"
+            id="nameInput"
+            placeholder="Enter your first name"
+        >
         <br>
         <button onclick="sayHello()">Say Hello</button>
         <p id="greeting"></p>
     </div>
 
+    <!-- Custom Course API -->
+    <div class="card">
+        <h2>Course Information API</h2>
+        <p>Retrieve course details from your custom Flask API endpoint.</p>
+        <button onclick="loadCourse()">Load Course Information</button>
+        <div id="courseResult"></div>
+    </div>
+
     <script>
+        // Student Information API
         function loadStudent() {
             fetch('/student')
                 .then(response => {
@@ -93,6 +113,7 @@
                 });
         }
 
+        // Greeting API
         function sayHello() {
             const name = document.getElementById('nameInput').value.trim();
 
@@ -109,6 +130,29 @@
                 .catch(error => {
                     document.getElementById('greeting').innerText =
                         'Unable to retrieve greeting.';
+                });
+        }
+
+        // Custom Course Information API
+        function loadCourse() {
+            fetch('/course')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Request failed');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('courseResult').innerHTML =
+                        '<p><b>Course Code:</b> ' + data.course_code + '</p>' +
+                        '<p><b>Course Title:</b> ' + data.course_title + '</p>' +
+                        '<p><b>Instructor:</b> ' + data.instructor + '</p>' +
+                        '<p><b>Semester:</b> ' + data.semester + '</p>' +
+                        '<p><b>Academic Year:</b> ' + data.academic_year + '</p>';
+                })
+                .catch(error => {
+                    document.getElementById('courseResult').innerText =
+                        'Unable to retrieve course information.';
                 });
         }
     </script>
