@@ -17,9 +17,23 @@ def initialize_database():
                 name TEXT NOT NULL,
                 program TEXT NOT NULL,
                 year INTEGER NOT NULL,
-                section TEXT NOT NULL
+                section TEXT NOT NULL,
+                source TEXT DEFAULT 'Local'
             )
         """)
+
+        # Add source column if it does not exist yet
+        columns = [
+            row[1] for row in conn.execute(
+                "PRAGMA table_info(students)"
+            ).fetchall()
+        ]
+
+        if "source" not in columns:
+            conn.execute("""
+                ALTER TABLE students
+                ADD COLUMN source TEXT DEFAULT 'Local'
+            """)
 
         count = conn.execute(
             "SELECT COUNT(*) FROM students"
@@ -27,21 +41,22 @@ def initialize_database():
 
         if count == 0:
             sample_students = [
-                ("2026-00123", "John Michael Pabilona", "BSIT", 3, "B"),
-                ("2026-00124", "Stephen Jeck Paclibar", "BSIT", 3, "B"),
-                ("2026-00125", "Harold Redolosa Padernal", "BSIT", 3, "B"),
-                ("2026-00126", "Keven Olesco", "BSIT", 3, "B"),
-                ("2026-00127", "Grant David", "BSIT", 3, "B")
+                ("2026-00123", "John Michael Pabilona", "BSIT", 3, "B", "Local"),
+                ("2026-00124", "Stephen Jeck Paclibar", "BSIT", 3, "B", "Local"),
+                ("2026-00125", "Harold Redolosa Padernal", "BSIT", 3, "B", "Local"),
+                ("2026-00126", "Keven Olesco", "BSIT", 3, "B", "Local"),
+                ("2026-00127", "Grant David", "BSIT", 3, "B", "Local")
             ]
 
             conn.executemany("""
                 INSERT INTO students
-                (student_id, name, program, year, section)
-                VALUES (?, ?, ?, ?, ?)
+                (student_id, name, program, year, section, source)
+                VALUES (?, ?, ?, ?, ?, ?)
             """, sample_students)
 
         conn.commit()
-        print(f"Database initialized: {DATABASE}")
+        print("Database initialized successfully!")
+        print("Source column is ready!")
 
     finally:
         conn.close()
