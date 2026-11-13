@@ -155,6 +155,14 @@
         button.edit { background: #ca8a04; }
         button.edit:hover { background: #a16207; }
 
+        button.import {
+            background: #2563eb;
+        }
+
+        button.import:hover {
+            background: #1d4ed8;
+        }
+
         .record {
             border: 1px solid var(--border);
             background: #f7fef8;
@@ -224,7 +232,7 @@
         <h1>🌿 StudentHub</h1>
         <p>Student Information and Database Management System</p>
         <p>IT 3120 | Flask REST API | SQLite | CRUD Application</p>
-        <span class="badge">Laboratory Activity 8</span>
+        <span class="badge">Laboratory Activity 9</span>
     </header>
 
     <div class="stats">
@@ -373,8 +381,8 @@
         <h2>🌐 Classmate's Student API</h2>
 
         <p class="subtext">
-            Enter your classmate's public API endpoint. This section
-            only reads remote records. It cannot modify your classmate's database.
+            Retrieve records from your classmate's public API.
+            You can save selected records into your own database.
         </p>
 
         <div class="field">
@@ -385,6 +393,10 @@
                 value="https://rubyjoymolina-2.onrender.com/api/students"
                 placeholder="https://classmate-app.onrender.com/api/students"
             >
+            <p class="subtext">
+                The Flask server uses the CLASSMATE_API_URL environment variable
+                configured in your application.
+            </p>
         </div>
 
         <button type="button" id="classmateButton"
@@ -454,7 +466,13 @@
         return button;
     }
 
-    function displayStudentCards(container, students, allowEdit = false) {
+    // DISPLAY STUDENT RECORDS
+    function displayStudentCards(
+        container,
+        students,
+        allowEdit = false,
+        allowImport = false
+    ) {
         container.replaceChildren();
 
         if (!Array.isArray(students) || students.length === 0) {
@@ -477,7 +495,8 @@
                 ["Database ID", student.id],
                 ["Program", student.program],
                 ["Year", student.year],
-                ["Section", student.section]
+                ["Section", student.section],
+                ["Source", student.source || (allowImport ? "Classmate API" : "Local")]
             ];
 
             fields.forEach(([label, value]) => {
@@ -503,6 +522,20 @@
                 actions.appendChild(makeButton("Delete", "danger", () => {
                     deleteStudent(student.id, student.name);
                 }));
+
+                card.appendChild(actions);
+            }
+
+            // NEW: SAVE PARTNER RECORD TO OUR DATABASE
+            if (allowImport) {
+                const actions = document.createElement("div");
+                actions.className = "actions";
+
+                actions.appendChild(makeButton(
+                    "Save to My Database",
+                    "import",
+                    () => savePartnerRecord(student)
+                ));
 
                 card.appendChild(actions);
             }
@@ -547,7 +580,8 @@
                 student.name,
                 student.program,
                 student.year,
-                student.section
+                student.section,
+                student.source
             ].join(" ").toLowerCase();
 
             return searchable.includes(search) &&
@@ -802,7 +836,8 @@
 
             const list = document.createElement("div");
 
-            displayStudentCards(list, records, false);
+            // UPDATED: ENABLE SAVE BUTTON FOR PARTNER RECORDS
+            displayStudentCards(list, records, false, true);
 
             container.appendChild(list);
 
@@ -811,6 +846,54 @@
                 "Unable to retrieve classmate records: " + error.message;
         } finally {
             button.disabled = false;
+        }
+    }
+
+    // NEW: IMPORT PARTNER RECORD INTO OUR DATABASE
+    async function savePartnerRecord(student) {
+        const confirmed = confirm(
+            "Save " + (student.name || "this student") +
+            " to your own database?"
+        );
+
+        if (!confirmed) return;
+
+        const payload = {
+            student_id: student.student_id,
+            name: student.name,
+            program: student.program,
+            year: Number(student.year),
+            section: student.section,
+            source: "Classmate API"
+        };
+
+        if (
+            !payload.student_id ||
+            !payload.name ||
+            !payload.program ||
+            !payload.year ||
+            !payload.section
+        ) {
+            alert("Cannot import this record. Some required student information is missing.");
+            return;
+        }
+
+        try {
+            const result = await fetchJSON("/import-student", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            alert(result.message || "Student imported successfully!");
+
+            // Refresh our own SQLite records
+            await loadStudents();
+
+        } catch (error) {
+            alert("Import failed: " + error.message);
         }
     }
 
