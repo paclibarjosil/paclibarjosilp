@@ -1,5 +1,6 @@
 
 import sqlite3
+import requests
 from flask import Flask, jsonify, request, render_template
 
 app = Flask(__name__)
@@ -24,7 +25,7 @@ def home():
 
 
 # ==========================================
-# EXISTING STUDENT INFORMATION API
+# STUDENT INFORMATION API
 # ==========================================
 
 @app.route("/student")
@@ -45,14 +46,13 @@ def get_student():
 @app.route("/hello")
 def say_hello():
     name = request.args.get("name", "Student")
-
     return jsonify({
         "message": f"Hello, {name}!"
     })
 
 
 # ==========================================
-# EXISTING COURSE INFORMATION API
+# COURSE INFORMATION API
 # ==========================================
 
 @app.route("/course")
@@ -84,7 +84,7 @@ def get_students():
 
 
 # ==========================================
-# ACTIVITY 7 - GET ONE STUDENT BY ID
+# ACTIVITY 7 - GET ONE STUDENT
 # ==========================================
 
 @app.route("/students/<int:id>", methods=["GET"])
